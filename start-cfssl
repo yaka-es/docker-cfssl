@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -eo pipefail
+set -exo
 
 if [ -z "${CFSSL_CA_HOST}" ]; then
   >&2 echo "CFSSL_CA_HOST is not set"
@@ -28,7 +28,7 @@ EOF
 fi
 
 if [ -n "${CFSSL_CA_AUTH_KEY}"]; then
-  CFSSL_CA_AUTH_KEY=`openssl rand -hex 16`
+  CFSSL_CA_AUTH_KEY=$(cat /dev/urandom | env LC_CTYPE=C tr -dc 'a-f0-9' | fold -w 32 | head -n 1)
   echo "Generated auth key: ${CFSSL_CA_AUTH_KEY}"
 fi
 
@@ -47,6 +47,7 @@ if [ ! -f ${CFSSL_CA_POLICY_FILE} ]; then
     },
     "profiles": {
       "server": {
+        "expiry": "2160h",
         "usages": [
           "signing",
           "key encipherment",
@@ -54,6 +55,7 @@ if [ ! -f ${CFSSL_CA_POLICY_FILE} ]; then
         ]
       },
       "client": {
+        "expiry": "2160h",
         "usages": [
           "signing",
           "key encipherment",
@@ -61,6 +63,7 @@ if [ ! -f ${CFSSL_CA_POLICY_FILE} ]; then
         ]
       },
       "client-server": {
+        "expiry": "2160h",
         "usages": [
           "signing",
           "key encipherment",
