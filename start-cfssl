@@ -38,13 +38,37 @@ if [ ! -f ${CFSSL_CA_POLICY_FILE} ]; then
   "signing": {
     "default": {
       "auth_key": "auth_key",
-      "expiry": "8760h",
+      "expiry": "2160h",
       "usages": [
-         "signing",
-         "key encipherment",
-         "server auth"
-       ]
-     }
+        "signing",
+        "key encipherment",
+        "server auth"
+      ]
+    },
+    "profiles": {
+      "server": {
+        "usages": [
+          "signing",
+          "key encipherment",
+          "server auth"
+        ]
+      },
+      "client": {
+        "usages": [
+          "signing",
+          "key encipherment",
+          "client auth"
+        ]
+      },
+      "client-server": {
+        "usages": [
+          "signing",
+          "key encipherment",
+          "server auth",
+          "client auth"
+        ]
+      }
+    }
   },
   "auth_keys": {
     "auth_key": {
@@ -77,8 +101,21 @@ EOF
   cat server.pem ca.pem > server-bundle.pem
 fi
 
-cfssl serve -address=localhost -port=8888 -config=${CFSSL_CA_POLICY_FILE} -ca-bundle=/etc/cfssl/ca-bundle.crt -int-bundle=/etc/cfssl/int-bundle.crt -int-dir=/etc/cfssl/data/intermediates &
+if [ ! -f "db-config.json" ];then
+  echo "Initialize SQLite DB for certdb"
+  echo '{"driver":"sqlite3","data_source":"certstore_production.db"}' > db-config.json
+  goose -env production -path $GOPATH/src/github.com/cloudflare/cfssl/certdb/sqlite up
+fi
 
+cfssl serve -address=localhost \
+            -port=8888 \
+            -config=${CFSSL_CA_POLICY_FILE} \
+            -ca-bundle=/etc/cfssl/ca-bundle.crt \
+            -int-bundle=/etc/cfssl/int-bundle.crt \
+            -int-dir=/etc/cfssl/data/intermediates \
+            -db-config=db-config.json &
+
+echo "nginx listening for connections on port: 443"
 exec nginx -c /etc/nginx/nginx.conf
 
 # vim: set ft=sh:
