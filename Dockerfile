@@ -1,5 +1,8 @@
+#
+# docker-cfssl/Dockerfile
+#
+
 FROM golang:alpine
-MAINTAINER  Ankur Chauhan <ankur@malloc64.com>
 
 # install bash, nginx, git and go
 # clean out apk cache files
@@ -21,18 +24,19 @@ RUN set -ex \
     && ln -sf /dev/stdout /var/log/nginx/access.log \
     && ln -sf /dev/stderr /var/log/nginx/error.log \
     && mkdir /etc/cfssl/data \
-    && chmod 777 $(find /etc/cfssl -type d) \
-    && chmod 666 $(find /etc/cfssl -type f)
+    && chmod 755 $(find /etc/cfssl -type d) \
+    && chmod 644 $(find /etc/cfssl -type f)
 
 # define defaults for env variables
 ENV CFSSL_CA_HOST=example.local \
     CFSSL_CA_ALGO=rsa \
-    CFSSL_CA_KEY_SIZE=2048 \
-    CFSSL_CA_ORGANIZATION="Brightcove, Inc." \
-    CFSSL_CA_ORGANIZATIONAL_UNIT="RnA Internal Certificate Authority" \
-    CFSSL_CA_POLICY_FILE=/etc/cfssl/data/ca_policy.json
+    CFSSL_CA_KEY_SIZE=4096 \
+    CFSSL_CA_ORGANIZATION="Example, Inc." \
+    CFSSL_CA_ORGANIZATIONAL_UNIT="Internal Certificate Authority" \
+    CFSSL_CA_POLICY_FILE=/etc/cfssl/data/ca_policy.json \
+    CFSSL_CA_COMMON_NAME="Example Root CA"
 
-# define columes and workdir
+# define volumes and workdir
 VOLUME /etc/cfssl/data
 WORKDIR /etc/cfssl/data
 
